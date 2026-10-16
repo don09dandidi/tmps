@@ -1,0 +1,14 @@
+# dependențe și build
+node_modules/
+.output/
+.nitro/
+.tanstack/
+dist/
+.wrangler/
+
+# loguri și fișiere locale
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
