@@ -1,0 +1,30 @@
+# Large test data files
+*.txt
+
+# .NET build artifacts
+**/bin/
+**/obj/
+bin/
+obj/
+
+# LaTeX auxiliary files
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# Python cache
+**/__pycache__/
+*.py[cod]
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+lab1/report/
+lab1/REPORT.md
+lab1/charts/
+lab1/generate_charts.py
