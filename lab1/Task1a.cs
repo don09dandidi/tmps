@@ -41,7 +41,7 @@ public static class Task1a
             long neg = results.Sum(r => r.neg);
             long pos = results.Sum(r => r.pos);
             long zero = results.Sum(r => r.zero);
-            double peakMb = Process.GetCurrentProcess().PeakWorkingSet64 / (1024.0 * 1024.0);
+            double peakMb = PeakMem.Mb();
 
             Console.WriteLine($"{t,7} {sw.Elapsed.TotalSeconds,9:F3} {neg,13:N0} {pos,13:N0} {zero,10:N0} {neg + pos + zero,12:N0} {peakMb,8:F1}");
         }

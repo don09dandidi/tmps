@@ -87,7 +87,7 @@ public static class Task2
         total.Stop();
 
         long N = neg.Sum(), P = pos.Sum(), Z = zero.Sum();
-        double peakMb = Process.GetCurrentProcess().PeakWorkingSet64 / (1024.0 * 1024.0);
+        double peakMb = PeakMem.Mb();
 
         Console.WriteLine($"Threads:        {t}");
         Console.WriteLine($"Total time:     {total.Elapsed.TotalSeconds:F3} s");

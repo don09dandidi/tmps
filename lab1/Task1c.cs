@@ -87,7 +87,7 @@ public static class Task1c
             sw.Stop();
 
             long N = neg.Sum(), P = pos.Sum(), Z = zero.Sum();
-            double peakMb = Process.GetCurrentProcess().PeakWorkingSet64 / (1024.0 * 1024.0);
+            double peakMb = PeakMem.Mb();
             Console.WriteLine($"{w,7} {sw.Elapsed.TotalSeconds,9:F3} {N,13:N0} {P,13:N0} {Z,11:N0} {N + P + Z,13:N0} {peakMb,14:F1}");
 
             reference ??= new[] { N, P, Z };
