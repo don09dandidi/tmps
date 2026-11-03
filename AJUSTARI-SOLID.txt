@@ -1,0 +1,153 @@
+LIVE STREAM SIGHT - CE A FOST INLOCUIT SI CU CE (SOLID)
+=========================================================
+
+Principii SOLID aplicate:
+  S - Principiul Responsabilitatii Unice      (Single Responsibility Principle)
+  O - Principiul Deschis/Inchis               (Open/Closed Principle)
+  D - Principiul Inversarii Dependentelor     (Dependency Inversion Principle)
+
+Aspectul si comportamentul interfetei raman la fel. go2rtc, modelul de date "Camera"
+si datele salvate in localStorage nu s-au schimbat.
+
+
+-----------------------------------------------------------------------------------------
+1. PRINCIPIUL RESPONSABILITATII UNICE (Single Responsibility Principle)
+   Regula: o clasa/componenta/modul are un singur motiv de schimbare.
+-----------------------------------------------------------------------------------------
+
+1.1  src/routes/index.tsx
+     INLOCUIT:  un singur fisier de 217 linii care continea: starea paginii, cautarea,
+                header-ul, cardul unei camere, modalul fullscreen si butonul de
+                inregistrare.
+     CU:        index.tsx (aprox. 110 linii) care pastreaza doar starea, cautarea si
+                header-ul, iar restul sunt componente separate:
+                  - src/components/CameraTile.tsx   (un card de camera din grila)
+                  - src/components/CameraModal.tsx  (vizualizarea fullscreen)
+                  - src/components/RecordingControl.tsx (controlul de inregistrare)
+
+1.2  src/components/CameraPlayer.tsx
+     INLOCUIT:  o singura componenta care facea 3 lucruri: pornea/oprea hls.js, tinea
+                minte erorile si desena placeholder-ul (linii de scanare + icon Wifi).
+     CU:        patru piese, fiecare cu o singura treaba:
+                  - src/lib/video/start-playback.ts   ciclul de viata al unui stream
+                                                      (pornire, oprire, rezultate
+                                                      intarziate dupa oprire)
+                  - src/hooks/use-video-stream.ts     legatura cu React (efect + stare
+                                                      de eroare)
+                  - src/components/StreamPlaceholder.tsx  aspectul "fara imagine"
+                  - src/components/CameraPlayer.tsx   doar decide ce se afiseaza
+                                                      (video sau placeholder)
+
+Beneficiu: logica de pornire/oprire a unui stream este cod TypeScript simplu, testabil
+fara browser (test/start-playback.test.ts).
+
+
+-----------------------------------------------------------------------------------------
+2. PRINCIPIUL DESCHIS/INCHIS (Open/Closed Principle)
+   Regula: codul este deschis pentru extindere, dar inchis pentru modificare.
+-----------------------------------------------------------------------------------------
+
+2.1  Controlul de inregistrare (RecordingControl)
+     INLOCUIT:  in index.tsx, o functie cu "if (camera.recordingMode === 'auto') {...}"
+                iar restul cazurilor mergeau implicit pe butonul manual. Un mod nou de
+                inregistrare (de ex. "programat") ar fi cerut modificarea acestei
+                functii.
+     CU:        un registru, src/components/recording/registry.ts:
+                  RECORDING_CONTROLS: Record<RecordingMode, Componenta> = {
+                    auto:   AutoRecordingBadge,
+                    manual: ManualRecordingButton,
+                  }
+                Fisiere noi:
+                  - src/components/recording/AutoRecordingBadge.tsx
+                  - src/components/recording/ManualRecordingButton.tsx
+                  - src/components/recording/types.ts
+                  - src/components/recording/registry.ts
+                  - src/components/RecordingControl.tsx (cauta controlul in registru)
+
+     Cum adaugi un mod nou: creezi o componenta noua si adaugi o singura linie in
+     registru. RecordingControl, CameraTile, CameraModal si index.tsx nu se modifica.
+     Pentru ca tipul este Record<RecordingMode, ...>, TypeScript opreste build-ul daca
+     adaugi un mod in RecordingMode si uiti sa-i inregistrezi controlul.
+
+     Un mod necunoscut citit din localStorage (date vechi) foloseste butonul manual,
+     exact ca inainte, in loc sa strice grila.
+
+
+-----------------------------------------------------------------------------------------
+3. PRINCIPIUL INVERSARII DEPENDENTELOR (Dependency Inversion Principle)
+   Regula: modulele de nivel inalt depind de abstractii, nu de implementari concrete.
+-----------------------------------------------------------------------------------------
+
+3.1  Redarea video (hls.js)
+     INLOCUIT:  CameraPlayer.tsx importa direct "hls.js" si facea "new Hls(...)". Nu se
+                putea testa fara browser si fara hls.js real, iar schimbarea tehnologiei
+                de redare insemna rescrierea componentei.
+     CU:        o abstractie si o implementare:
+                  - src/lib/video/video-engine.ts  interfata VideoEngine (abstractia)
+                  - src/lib/video/hls-engine.ts    implementarea cu hls.js (singurul
+                                                   fisier care stie de hls.js)
+                CameraPlayer primeste optional prop-ul "engine" (implicit hls.js), deci
+                poate fi inlocuit cu alt motor sau cu unul fals in teste.
+
+3.2  Accesul la lista de camere (localStorage)
+     INLOCUIT:  cheia "cameras" din localStorage era scrisa in 3 locuri:
+                  useLocalStorageState<Camera[]>("cameras", DEFAULT_CAMERAS)
+                in index.tsx si de doua ori in settings.tsx.
+     CU:        src/lib/use-cameras.ts, hook-ul useCameras(). Paginile cer "camerele" si
+                nu mai stiu unde sunt stocate sau sub ce cheie. Mutarea pe un API
+                inseamna schimbarea unui singur fisier.
+     Nota:      este o forma usoara de inversare a dependentelor (hook), nu o interfata
+                completa de tip repository.
+
+
+-----------------------------------------------------------------------------------------
+FISIERE MODIFICATE
+-----------------------------------------------------------------------------------------
+  src/routes/index.tsx          rescris (vezi 1.1), foloseste useCameras()
+  src/routes/settings.tsx       cele 2 apeluri useLocalStorageState("cameras", ...) au
+                                devenit useCameras(); importurile au fost actualizate
+  src/components/CameraPlayer.tsx  rescris (vezi 1.2 si 3.1)
+  package.json                  adaugat devDependency "tsx" si scripturile "test" si
+                                "typecheck"
+  package-lock.json             actualizat odata cu tsx (bun.lock NU a fost actualizat)
+
+FISIERE NOI
+-----------------------------------------------------------------------------------------
+  src/components/CameraTile.tsx
+  src/components/CameraModal.tsx
+  src/components/RecordingControl.tsx
+  src/components/StreamPlaceholder.tsx
+  src/components/recording/AutoRecordingBadge.tsx
+  src/components/recording/ManualRecordingButton.tsx
+  src/components/recording/registry.ts
+  src/components/recording/types.ts
+  src/hooks/use-video-stream.ts
+  src/lib/use-cameras.ts
+  src/lib/video/video-engine.ts
+  src/lib/video/hls-engine.ts
+  src/lib/video/start-playback.ts
+  test/start-playback.test.ts
+  test/recording-registry.test.ts
+  test/tsconfig.json
+  SOLID.md
+
+TESTE (9, ruleaza cu "npm test", fara browser, fara camere, fara go2rtc)
+-----------------------------------------------------------------------------------------
+  start-playback.test.ts       (6) pornire cu URL-ul corect; oprire dupa attach; oprire
+                               inainte ca motorul sa termine; erori ignorate dupa oprire;
+                               motor care nu poate reda; attach care esueaza
+                               -> Responsabilitate Unica + Inversarea Dependentelor
+  recording-registry.test.ts   (3) fiecare mod are control; mod necunoscut -> fallback
+                               -> Deschis/Inchis
+
+SMALL BEHAVIOR NOTE
+-----------------------------------------------------------------------------------------
+  Daca hls.js nu se poate incarca (eroare de retea la incarcarea modulului), tile-ul
+  arata acum placeholder-ul. Inainte, eroarea ramanea necontrolata. Este singura
+  diferenta de comportament fata de varianta veche.
+
+LIMITARI
+-----------------------------------------------------------------------------------------
+  - Redarea cu camere reale trebuie verificata manual pe VAIO.
+  - Componentele React nu au teste de randare, doar logica extrasa este testata.
+  - Verificat: typecheck, 9 teste, lint pe fisierele noi, build de productie.
