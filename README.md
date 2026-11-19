@@ -99,3 +99,31 @@ classDiagram
         +updateSetting(key: String, value: Any)
     }
 ```
+
+---
+
+## Laboratorul 3: Pattern-uri structurale
+
+Composite, Decorator, Adapter și Proxy, aplicate sistemului de securitate al casei, în
+[`src/security/`](src/security/). Obiectele sunt create cu pattern-urile creaționale Builder
+(`CameraBuilder`) și Factory (`NotifierFactory`). Raportul complet, cu diagrame UML, cod și teste,
+este în **[REPORT.md](REPORT.md)**.
+
+### Rulare
+
+Necesită Node.js 22.18+ (TypeScript rulat direct de Node) și npm.
+
+```sh
+npm install            # o singură dată
+npm test               # toate testele (27), inclusiv cele 18 pentru pattern-uri
+npm run test:patterns  # doar testele pattern-urilor (merge și fără npm install)
+npm run demo           # demo în consolă: comenzi și detecții prin toate pattern-urile
+npm run dev            # aplicația web (dashboard-ul camerelor)
+```
+
+Demo-ul rulează fără rețea (go2rtc și Telegram sunt simulate). Cu serviciile reale:
+
+```sh
+GO2RTC_URL=http://127.0.0.1:1984 TELEGRAM_TOKEN=<token> TELEGRAM_CHAT_ID=<id> npm run demo
+```
+

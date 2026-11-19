@@ -28,3 +28,8 @@ lab1/report/
 lab1/REPORT.md
 lab1/charts/
 lab1/generate_charts.py
+
+# Node
+node_modules/
+dist/
+.output/
